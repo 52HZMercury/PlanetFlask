@@ -1,6 +1,7 @@
 from flask import Flask, request, Response
 from werkzeug.utils import secure_filename
 import os
+import json
 
 from inference import get_prediction
 
@@ -55,11 +56,25 @@ def uploadRecognize():
     return {"code": '503', "data": "", "message": "仅支持post方法"}
 
 
-@app.route("/recognize")
+@app.route("/recognize",methods=['POST', "GET"])
 def recognize():
     if request.method == 'POST':
-        # 获取post过来的文件名称，从name=file参数中获取
-        filepath = request.files['file']
+        # 默认返回内容
+        return_dict = {'return_code': '200', 'return_info': '处理成功', 'result': False}
+        # 获取post过来的文件名称
+        filepath = request.get_data()
+        if request.get_data() is None:
+            return_dict['return_code'] = '5004'
+            return_dict['return_info'] = '请求参数为空'
+            return json.dumps(return_dict, ensure_ascii=False)
+            # 获取传入的参数
+        get_Data = request.get_data()
+        # 传入的参数为bytes类型，需要转化成json
+        get_Data = json.loads(get_Data)
+
+        filepath = get_Data.get('filepath')
+
+        print(filepath)
         # 检测文件格式
         if filepath and allowed_file(filepath):
             # 对上传的图片进行推理
